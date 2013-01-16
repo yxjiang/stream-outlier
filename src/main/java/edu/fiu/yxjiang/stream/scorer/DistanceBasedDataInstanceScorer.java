@@ -13,8 +13,9 @@ import backtype.storm.task.OutputCollector;
 public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineMetadata> {
 
 	@Override
-	public void calculateScores(OutputCollector collector, List<MachineMetadata> observationList) {
-		
+	public List<ScorePackage> getScores(List<MachineMetadata> observationList) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
