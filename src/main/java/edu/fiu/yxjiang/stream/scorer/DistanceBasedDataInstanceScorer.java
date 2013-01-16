@@ -1,9 +1,9 @@
 package edu.fiu.yxjiang.stream.scorer;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import sysmon.common.metadata.MachineMetadata;
+import backtype.storm.task.OutputCollector;
 
 /**
  * Calculate the data instance anomaly score based on its distance to the cluster center.
@@ -13,8 +13,8 @@ import sysmon.common.metadata.MachineMetadata;
 public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineMetadata> {
 
 	@Override
-	public List<ScorePackage<MachineMetadata>> getScores(List<MachineMetadata> observationList) {
-		return new ArrayList<ScorePackage<MachineMetadata>>();
+	public void calculateScores(OutputCollector collector, List<MachineMetadata> observationList) {
+		
 	}
 
 }
