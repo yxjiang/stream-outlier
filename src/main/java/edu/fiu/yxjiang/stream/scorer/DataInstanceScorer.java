@@ -3,7 +3,7 @@ package edu.fiu.yxjiang.stream.scorer;
 import java.util.List;
 
 /**
- * 
+ * DataInstanceScorer defines the method to calculate the data instance anomaly scores.
  * @author yexijiang
  *
  */
@@ -14,6 +14,6 @@ public abstract class DataInstanceScorer<T> {
 	 * @param observationList
 	 * @return
 	 */
-	public abstract List<ScorePackage> getScores(List<T> observationList);
+	public abstract List<ScorePackage<T>> getScores(List<T> observationList);
 	
 }
