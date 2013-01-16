@@ -40,12 +40,11 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		if(profile == null) {
 			profile = new StreamProfile<T>((T)input.getValue(3));
 		}
+		
 		else {
 			double dataInstanceAnomalyScore = input.getDouble(1);
 			profile.streamAnomalyScore = profile.streamAnomalyScore * factor + dataInstanceAnomalyScore;
 		}
-		
-		
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
