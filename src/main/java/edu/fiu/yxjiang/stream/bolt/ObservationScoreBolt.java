@@ -11,24 +11,26 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import edu.fiu.yxjiang.stream.scorer.DataInstanceScorer;
-import edu.fiu.yxjiang.stream.scorer.DistanceBasedDataInstanceScorer;
+import edu.fiu.yxjiang.stream.scorer.DataInstanceScorerFactory;
 
 public class ObservationScoreBolt extends BaseRichBolt{
 
 	private long previousTimestamp;
+	private String dataTypeName;
 	private OutputCollector collector;
 	private DataInstanceScorer dataInstanceScorer;
 	private List<Object> observationList;
 	
-	public ObservationScoreBolt() {
+	public ObservationScoreBolt(String dataTypeName) {
 		this.previousTimestamp = 0;
+		this.dataTypeName = dataTypeName;
 		this.observationList = new ArrayList<Object>();
 	}
 
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
-		this.dataInstanceScorer = new DistanceBasedDataInstanceScorer();
+		this.dataInstanceScorer = DataInstanceScorerFactory.getDataInstanceScorer(dataTypeName);
 	}
 
 	@Override
@@ -48,7 +50,7 @@ public class ObservationScoreBolt extends BaseRichBolt{
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("id", "score", "instance"));
+		declarer.declare(new Fields("id", "score", "timestamp", "instance"));
 	}
 	
 	public boolean isAutoAck(){
