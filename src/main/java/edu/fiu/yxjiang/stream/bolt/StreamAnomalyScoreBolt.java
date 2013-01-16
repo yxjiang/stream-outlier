@@ -9,7 +9,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
 
-public class StreamScoreBolt extends BaseRichBolt {
+public class StreamAnomalyScoreBolt extends BaseRichBolt {
 
 	private Map<String, Double> accumulateScores;
 	private OutputCollector collector;
@@ -18,7 +18,7 @@ public class StreamScoreBolt extends BaseRichBolt {
 	
 	private String output = "";
 	
-	public StreamScoreBolt() {
+	public StreamAnomalyScoreBolt() {
 		this.accumulateScores = new HashMap<String, Double>();
 		this.lambda = 0;
 	}

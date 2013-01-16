@@ -17,7 +17,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 import edu.fiu.yxjiang.stream.MetadataGather;
 import edu.fiu.yxjiang.stream.bolt.DataInstancesScoreBolt;
-import edu.fiu.yxjiang.stream.bolt.StreamScoreBolt;
+import edu.fiu.yxjiang.stream.bolt.StreamAnomalyScoreBolt;
 import edu.fiu.yxjiang.stream.producer.MetadataProducer;
 import edu.fiu.yxjiang.stream.provider.MetadataProvider;
 
@@ -44,9 +44,12 @@ public class StreamOutlierTopology {
 
 		String gatherBrokerAddress = "tcp://" + gatherIP + ":"
 				+ GlobalParameters.SUBSCRIBE_COMMAND_PORT;
+		
+		List<String> gatherBrokerAddressList = new ArrayList<String>();
+		gatherBrokerAddressList.add(gatherBrokerAddress);
 
 		// JMS Queue Provider
-		JmsProvider jmsTopicProvider = new MetadataProvider(gatherBrokerAddress);
+		JmsProvider jmsTopicProvider = new MetadataProvider(gatherBrokerAddressList);
 
 		// JMS Producer
 		JmsTupleProducer producer = new MetadataProducer();
@@ -71,8 +74,8 @@ public class StreamOutlierTopology {
 		DataInstancesScoreBolt dataInstScoreBolt = new DataInstancesScoreBolt();
 		builder.setBolt("DataInstancesScoreBolt", dataInstScoreBolt, 1).shuffleGrouping(JMS_TOPIC_SPOUT);
 		
-		StreamScoreBolt streamScoreBolt = new StreamScoreBolt();
-		builder.setBolt("StreamScoreBolt", streamScoreBolt, 1).fieldsGrouping("DataInstancesScoreBolt", new Fields("entityID"));
+		StreamAnomalyScoreBolt streamScoreBolt = new StreamAnomalyScoreBolt();
+		builder.setBolt("StreamAnomalyScoreBolt", streamScoreBolt, 1).fieldsGrouping("DataInstancesScoreBolt", new Fields("entityID"));
 		
 		double lambda = 0.5;	//	exponential decay parameter
 		Config conf = new Config();

@@ -1,6 +1,5 @@
 package edu.fiu.yxjiang.stream.provider;
 
-
 import java.util.List;
 
 import javax.jms.Connection;
@@ -15,11 +14,12 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import backtype.storm.contrib.jms.JmsProvider;
 
 /**
- * Provider is used by spout to receive the system monitoring meta-data from message queue.
+ * GenericProvider is in charge of connect to the message brokers.
+ * It will feed message to the spout.
  * @author yexijiang
  *
  */
-public class MetadataProvider implements JmsProvider{
+public class GenericProvider implements JmsProvider{
 
 	private static int providerCount = 0;	//	total number of providers
 	
@@ -27,13 +27,13 @@ public class MetadataProvider implements JmsProvider{
 	private ConnectionFactory connectionFactory;
 	private Topic destination;
 	
-	public MetadataProvider(List<String> gatherBrokerAddressList) {
+	public GenericProvider(List<String> gatherBrokerAddressList, String topicName) {
 		this.providerIdx = providerCount++;
 		this.connectionFactory = new ActiveMQConnectionFactory(gatherBrokerAddressList.get(this.providerIdx));
 		try {
 			Connection connection = this.connectionFactory.createConnection();
 			Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-			this.destination = session.createTopic("command");
+			this.destination = session.createTopic(topicName);
 		} catch (JMSException e) {
 			e.printStackTrace();
 		}
@@ -49,5 +49,4 @@ public class MetadataProvider implements JmsProvider{
 	public Destination destination() throws Exception {
 		return this.destination;
 	}
-
 }
