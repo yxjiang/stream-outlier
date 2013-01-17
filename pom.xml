@@ -38,13 +38,6 @@
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.github.ptgoetz</groupId>
-			<artifactId>storm-jms</artifactId>
-			<version>0.8.1</version>
-			<!-- keep storm-jms out of the jar-with-dependencies -->
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.geronimo.specs</groupId>
 			<artifactId>geronimo-jms_1.1_spec</artifactId>
 			<version>1.1.1</version>
@@ -95,6 +88,13 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.ptgoetz</groupId>
+			<artifactId>storm-jms</artifactId>
+			<version>0.2.1</version>
+			<type>jar</type>
+			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 	<build>
