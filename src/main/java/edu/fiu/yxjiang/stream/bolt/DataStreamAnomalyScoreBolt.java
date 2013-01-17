@@ -40,19 +40,16 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		if(profile == null) {
 			profile = new StreamProfile<T>((T)input.getValue(3));
 		}
-		
 		else {
 			double dataInstanceAnomalyScore = input.getDouble(1);
 			profile.streamAnomalyScore = profile.streamAnomalyScore * factor + dataInstanceAnomalyScore;
 		}
+		
+		this.collector.ack(input);
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("id", "score", "timestamp"));		
-	}
-	
-	public boolean isAutoAck(){
-		return true;
+		declarer.declare(new Fields("id", "score", "timestamp", "observation"));		
 	}
 	
 	/**

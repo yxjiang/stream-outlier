@@ -42,19 +42,16 @@ public class ObservationScoreBolt extends BaseRichBolt{
 			observationList.clear();
 			previousTimestamp = timestamp;
 		}
-		else if (timestamp < previousTimestamp) {
-			return;
+		else if (timestamp == previousTimestamp) {
+			observationList.add(input.getValue(2));
 		}
-		observationList.add(input.getValue(2));
+		
+		this.collector.ack(input);
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("id", "score", "timestamp", "instance"));
+		declarer.declare(new Fields("id", "score", "timestamp", "observation"));
 	}
 	
-	public boolean isAutoAck(){
-		return true;
-	}
-
 }
