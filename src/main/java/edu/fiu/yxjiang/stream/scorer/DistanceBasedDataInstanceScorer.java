@@ -1,5 +1,6 @@
 package edu.fiu.yxjiang.stream.scorer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import sysmon.common.metadata.MachineMetadata;
@@ -13,7 +14,7 @@ public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineM
 
 	@Override
 	public List<ScorePackage<MachineMetadata>> getScores(List<MachineMetadata> observationList) {
-		return null;
+		return new ArrayList<ScorePackage<MachineMetadata>>();
 	}
 
 }
