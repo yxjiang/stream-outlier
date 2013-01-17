@@ -25,7 +25,11 @@ public class BFPRT {
 			tupleWrapperList.add(new TupleWrapper(tuple.getLong(1), tuple));
 		}
 		
-		return bfprtWrapper(tupleWrapperList, i, 0, tupleWrapperList.size()).tuple;
+		insertionSort(tupleWrapperList, 0, tupleWrapperList.size());
+		return tupleWrapperList.get(((int)(tupleWrapperList.size() / 2))).tuple;
+
+		
+//		return bfprtWrapper(tupleWrapperList, i, 0, tupleWrapperList.size()).tuple;
 	}
 	
 	public static TupleWrapper bfprtWrapper(List<TupleWrapper> tupleWrapperList, int i, int left, int right) {
@@ -41,7 +45,7 @@ public class BFPRT {
 			return bfprtWrapper(tupleWrapperList, q + 1, right, i);
 		}
 		else if (i < k) {	//	recursively find left part
-			return bfprtWrapper(tupleWrapperList, left, q - 1, i - k);
+			return bfprtWrapper(tupleWrapperList, left, q - 1, i - k + 1);
 		}
 		else {
 			return tupleWrapperList.get(q);

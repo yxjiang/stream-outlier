@@ -49,7 +49,7 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("id", "score", "timestamp", "observation"));		
+		declarer.declare(new Fields("id", "streamAnomalyScore", "timestamp", "observation"));		
 	}
 	
 	/**

@@ -37,7 +37,7 @@ public class ObservationScoreBolt extends BaseRichBolt{
 	public void execute(Tuple input) {
 		long timestamp = input.getLong(0);
 		if(timestamp > previousTimestamp) {
-			//	a new batch of observations
+			//	a new batch of observation, calculate the scores of old batch and then emit 
 			dataInstanceScorer.calculateScores(this.collector, observationList);
 			observationList.clear();
 			previousTimestamp = timestamp;
@@ -51,7 +51,7 @@ public class ObservationScoreBolt extends BaseRichBolt{
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("id", "score", "timestamp", "observation"));
+		declarer.declare(new Fields("id", "dataInstanceAnomalyScore", "timestamp", "observation"));
 	}
 	
 }
