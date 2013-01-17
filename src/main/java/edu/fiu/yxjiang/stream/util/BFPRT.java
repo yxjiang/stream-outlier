@@ -13,7 +13,19 @@ public class BFPRT {
 	
 	public static Tuple bfprt(List<Tuple> tupleList, int k) {
 		
+		
+		
 		return null;
+	}
+	
+	/**
+	 * Sort the group-of-5 with insertionSort.
+	 * @param tupleList
+	 * @param left
+	 * @param right
+	 */
+	private static void insertionSort(List<Tuple> tupleList, int left, int right) {
+		
 	}
 	
 }
