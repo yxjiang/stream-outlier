@@ -15,6 +15,7 @@ import backtype.storm.tuple.Values;
  * @author yexijiang
  *
  */
+@SuppressWarnings("serial")
 public class MetadataProducer implements JmsTupleProducer{
 
 	@Override

@@ -4,17 +4,25 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 
 import edu.fiu.yxjiang.message.MessageHandler;
+import edu.fiu.yxjiang.message.MessageHandlerFactory;
 
 import backtype.storm.contrib.jms.JmsTupleProducer;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Values;
 
-public class GenericProducer<T extends MessageHandler> implements JmsTupleProducer {
+public class GenericProducer implements JmsTupleProducer {
 	
-	private T messageHandler;
+	private MessageHandler messageHandler;
 	
-	public GenericProducer(T messageHandler) {
-		this.messageHandler = messageHandler;
+	public GenericProducer(String messageHandlerName) {
+		this.messageHandler = MessageHandlerFactory.getMessageHandler(messageHandlerName);
+		try{
+			if(this.messageHandler == null) {
+				throw new Exception("No message handler match the name " + messageHandlerName);
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

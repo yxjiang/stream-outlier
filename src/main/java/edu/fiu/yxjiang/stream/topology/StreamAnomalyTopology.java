@@ -13,20 +13,21 @@ import backtype.storm.contrib.jms.JmsProvider;
 import backtype.storm.contrib.jms.JmsTupleProducer;
 import backtype.storm.contrib.jms.spout.JmsSpout;
 import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 import edu.fiu.yxjiang.stream.MetadataGather;
-import edu.fiu.yxjiang.stream.bolt.DataInstancesScoreBolt;
-import edu.fiu.yxjiang.stream.bolt.StreamAnomalyScoreBolt;
+import edu.fiu.yxjiang.stream.bolt.ObservationScoreBolt;
 import edu.fiu.yxjiang.stream.producer.MetadataProducer;
 import edu.fiu.yxjiang.stream.provider.MetadataProvider;
 
-public class StreamOutlierTopology {
-	public static final String INTERMEDIATE_BOLT = "INTERMEDIATE_BOLT";
-	public static final String FINAL_BOLT = "FINAL_BOLT";
-	public static final String JMS_TOPIC_BOLT = "JMS_TOPIC_BOLT";
-	public static final String JMS_TOPIC_SPOUT = "JMS_TOPIC_SPOUT";
-	public static final String ANOTHER_BOLT = "ANOTHER_BOLT";
+public class StreamAnomalyTopology {
+	
+	public static final String DATA_TYPE = "computerMetaData";
+	
+	public static final String JMS_INPUT_JMS_TOPIC = "command";
+	public static final String JMS_SPOUT = "JMS SPOUT";
+	public static final String DATA_INSTANCE_SCORER = "DATA INSTANCE SCORER";
+	public static final String STREAM_SCORER = "STREAM SCORER";
+	public static final String ALERT_TRIGGER = "ALERT TRIGGER";
 
 	@SuppressWarnings("serial")
 	public static void main(String[] args) throws Exception {
@@ -42,13 +43,18 @@ public class StreamOutlierTopology {
 		MetadataGather gather = new MetadataGather(gatherIP, list);
 		System.out.println("Gather broker setted!!");
 
-		String gatherBrokerAddress = "tcp://" + gatherIP + ":"
-				+ GlobalParameters.SUBSCRIBE_COMMAND_PORT;
+		//	the gather that aggregate all the message 
+		String gatherBrokerAddress = "tcp://" + gatherIP + ":" + GlobalParameters.SUBSCRIBE_COMMAND_PORT;
+		
+		List<String> gatherBrokerAddressList = new ArrayList<String>();
+		gatherBrokerAddressList.add(gatherBrokerAddress);
 
 		// JMS Queue Provider
+//		JmsProvider jmsTopicProvider = new GenericProvider(gatherBrokerAddressList, JMS_INPUT_JMS_TOPIC);
 		JmsProvider jmsTopicProvider = new MetadataProvider(gatherBrokerAddress);
-
+		
 		// JMS Producer
+//		JmsTupleProducer producer = new GenericProducer(DATA_TYPE);
 		JmsTupleProducer producer = new MetadataProducer();
 
 		// JMS Queue Spout
@@ -60,19 +66,15 @@ public class StreamOutlierTopology {
 
 		TopologyBuilder builder = new TopologyBuilder();
 
-		// spout with 1 parallel instances
-		builder.setSpout(JMS_TOPIC_SPOUT, queueSpout, 1);
+		// 	spout with 1 parallel instances
+		builder.setSpout(JMS_SPOUT, queueSpout, 1);
 
-		// intermediate bolt, subscribes to jms spout, anchors on tuples, and
-		// auto-acks
-//		GenericBolt genericBolt = new GenericBolt(INTERMEDIATE_BOLT, true);
-//		builder.setBolt(INTERMEDIATE_BOLT, genericBolt, 2).fieldsGrouping(JMS_TOPIC_SPOUT, new Fields("machineIP"));
-
-		DataInstancesScoreBolt dataInstScoreBolt = new DataInstancesScoreBolt();
-		builder.setBolt("DataInstancesScoreBolt", dataInstScoreBolt, 1).shuffleGrouping(JMS_TOPIC_SPOUT);
+		//	link data instance scorer to spout
+		ObservationScoreBolt dataInstScoreBolt = new ObservationScoreBolt(DATA_TYPE);
+		builder.setBolt(DATA_INSTANCE_SCORER, dataInstScoreBolt, 1).shuffleGrouping(JMS_SPOUT);
 		
-		StreamAnomalyScoreBolt streamScoreBolt = new StreamAnomalyScoreBolt();
-		builder.setBolt("StreamAnomalyScoreBolt", streamScoreBolt, 1).fieldsGrouping("DataInstancesScoreBolt", new Fields("entityID"));
+//		StreamAnomalyScoreBolt streamScoreBolt = new StreamAnomalyScoreBolt();
+//		builder.setBolt("StreamAnomalyScoreBolt", streamScoreBolt, 1).fieldsGrouping("DataInstancesScoreBolt", new Fields("entityID"));
 		
 		double lambda = 0.5;	//	exponential decay parameter
 		Config conf = new Config();

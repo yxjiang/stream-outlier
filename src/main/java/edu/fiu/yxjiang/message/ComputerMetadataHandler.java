@@ -15,7 +15,7 @@ public class ComputerMetadataHandler extends MessageHandler{
 
 	@Override
 	public void handleDeclare(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("timestamp", "machineIP", "metadataJson"));		
+		declarer.declare(new Fields("timestamp", "id", "metadataJson"));		
 	}
 
 	@Override

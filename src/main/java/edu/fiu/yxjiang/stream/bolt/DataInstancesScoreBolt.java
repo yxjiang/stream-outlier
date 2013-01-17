@@ -40,11 +40,7 @@ public class DataInstancesScoreBolt extends BaseRichBolt {
 	public void execute(Tuple input) {
 		long curTimestamp = input.getLong(0);
 		String machineIp = input.getString(1);
-		if (curTimestamp != previousTimestamp && totalCountInBatch != 0) { // a new
-																																				// batch
-																																				// of
-																																				// data
-																																				// instances
+		if (curTimestamp != previousTimestamp && totalCountInBatch != 0) { 
 			// score data instances of previous batch
 			MaximumLikelihoodNormalDistribution mlnd = new MaximumLikelihoodNormalDistribution(
 					totalCountInBatch, histogram);
