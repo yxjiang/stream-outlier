@@ -16,8 +16,8 @@ import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.utils.Utils;
 import edu.fiu.yxjiang.stream.MetadataGather;
 import edu.fiu.yxjiang.stream.bolt.ObservationScoreBolt;
-import edu.fiu.yxjiang.stream.producer.MetadataProducer;
-import edu.fiu.yxjiang.stream.provider.MetadataProvider;
+import edu.fiu.yxjiang.stream.producer.GenericProducer;
+import edu.fiu.yxjiang.stream.provider.GenericProvider;
 
 public class StreamAnomalyTopology {
 	
@@ -50,12 +50,12 @@ public class StreamAnomalyTopology {
 		gatherBrokerAddressList.add(gatherBrokerAddress);
 
 		// JMS Queue Provider
-//		JmsProvider jmsTopicProvider = new GenericProvider(gatherBrokerAddressList, JMS_INPUT_JMS_TOPIC);
-		JmsProvider jmsTopicProvider = new MetadataProvider(gatherBrokerAddress);
+		JmsProvider jmsTopicProvider = new GenericProvider(gatherBrokerAddressList, JMS_INPUT_JMS_TOPIC);
+//		JmsProvider jmsTopicProvider = new MetadataProvider(gatherBrokerAddressList);
 		
 		// JMS Producer
-//		JmsTupleProducer producer = new GenericProducer(DATA_TYPE);
-		JmsTupleProducer producer = new MetadataProducer();
+		JmsTupleProducer producer = new GenericProducer(DATA_TYPE);
+//		JmsTupleProducer producer = new MetadataProducer();
 
 		// JMS Queue Spout
 		JmsSpout queueSpout = new JmsSpout();

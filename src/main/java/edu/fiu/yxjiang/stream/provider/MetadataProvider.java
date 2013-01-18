@@ -1,5 +1,7 @@
 package edu.fiu.yxjiang.stream.provider;
 
+import java.util.List;
+
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -19,11 +21,16 @@ import backtype.storm.contrib.jms.JmsProvider;
 @SuppressWarnings("serial")
 public class MetadataProvider implements JmsProvider{
 
+	private static int providerCount = 0;
+	
+	private int providerIdx;
 	private ConnectionFactory connectionFactory;
 	private Topic destination;
 	
-	public MetadataProvider(String gatherBrokerAddress) {
-		this.connectionFactory = new ActiveMQConnectionFactory(gatherBrokerAddress);
+	
+	public MetadataProvider(List<String> gatherBrokerAddressList) {
+		this.providerIdx = providerCount++;
+		this.connectionFactory = new ActiveMQConnectionFactory(gatherBrokerAddressList.get(providerIdx));
 		try {
 			Connection connection = this.connectionFactory.createConnection();
 			Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

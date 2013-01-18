@@ -1,5 +1,7 @@
 package edu.fiu.yxjiang.message;
 
+import java.io.Serializable;
+
 import javax.jms.Message;
 
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -10,7 +12,7 @@ import backtype.storm.tuple.Values;
  * @author yexijiang
  *
  */
-public abstract class MessageHandler {
+public abstract class MessageHandler implements Serializable{
 	
 	/**
 	 * Define the output fields.

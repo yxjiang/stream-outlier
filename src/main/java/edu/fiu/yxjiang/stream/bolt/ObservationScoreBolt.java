@@ -64,7 +64,7 @@ public class ObservationScoreBolt extends BaseRichBolt{
 	}
 	
 	private void print(List<ScorePackage> scorePackageList) {
-		for(int i = 0; i < 10; ++i) {
+		for(int i = 0; i < 15; ++i) {
 			System.out.println();
 		}
 		
@@ -74,7 +74,7 @@ public class ObservationScoreBolt extends BaseRichBolt{
 			System.out.println(pack.getId() + "\t" + pack.getScore());
 		}
 		
-		for(int i = 0; i < 10; ++i) {
+		for(int i = 0; i < 15; ++i) {
 			System.out.println();
 		}
 	}

@@ -42,11 +42,12 @@ public class StreamOutlierTopology {
 		MetadataGather gather = new MetadataGather(gatherIP, list);
 		System.out.println("Gather broker setted!!");
 
-		String gatherBrokerAddress = "tcp://" + gatherIP + ":"
-				+ GlobalParameters.SUBSCRIBE_COMMAND_PORT;
-
+		String gatherBrokerAddress = "tcp://" + gatherIP + ":" + GlobalParameters.SUBSCRIBE_COMMAND_PORT;
+		List<String> gatherBrokerAddressList = new ArrayList<String>();
+		gatherBrokerAddressList.add(gatherBrokerAddress);
+		
 		// JMS Queue Provider
-		JmsProvider jmsTopicProvider = new MetadataProvider(gatherBrokerAddress);
+		JmsProvider jmsTopicProvider = new MetadataProvider(gatherBrokerAddressList);
 
 		// JMS Producer
 		JmsTupleProducer producer = new MetadataProducer();

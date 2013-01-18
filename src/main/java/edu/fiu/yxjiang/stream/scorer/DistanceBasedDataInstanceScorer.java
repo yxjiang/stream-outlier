@@ -20,6 +20,8 @@ public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineM
 			scorePackageList.add(new ScorePackage(metadata.getMachineIP(), 1.0, metadata));
 		}
 		
+		
+		
 		return scorePackageList;
 	}
 
