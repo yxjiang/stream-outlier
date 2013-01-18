@@ -43,7 +43,7 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		for(int i = 0; i < 10; ++i) {
 			System.out.println();
 		}
-		System.out.println(timestamp + "\t" + previousTimestamp);
+		System.out.println(timestamp + "\t" + previousTimestamp + "\t" + streamProfiles.size());
 		for(int i = 0; i < 10; ++i) {
 			System.out.println();
 		}
