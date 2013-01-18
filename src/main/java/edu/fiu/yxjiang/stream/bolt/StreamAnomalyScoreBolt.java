@@ -1,7 +1,9 @@
 package edu.fiu.yxjiang.stream.bolt;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -15,6 +17,7 @@ public class StreamAnomalyScoreBolt extends BaseRichBolt {
 	private OutputCollector collector;
 	private double lambda;
 	private long previousTimestamp;
+	private Set<Long> set = new HashSet<Long>();
 	
 	private String output = "";
 	
@@ -34,6 +37,8 @@ public class StreamAnomalyScoreBolt extends BaseRichBolt {
 	public void execute(Tuple input) {
 		
 		long timestamp = input.getLong(1);
+		
+		set.add(timestamp);
 		
 		if(previousTimestamp != timestamp) { 
 			if(previousTimestamp != 0) {

@@ -17,13 +17,13 @@ public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineM
 	public List<ScorePackage> getScores(List<MachineMetadata> observationList) {
 		List<ScorePackage> scorePackageList = new ArrayList<ScorePackage>();
 		
-		double[][] matrix = new double[observationList.size()][2];
+		double[][] matrix = new double[observationList.size()][1];
 		
 		for(int i = 0; i < observationList.size(); ++i)	 {
 			MachineMetadata metadata = observationList.get(i);
 			scorePackageList.add(new ScorePackage(metadata.getMachineIP(), 1.0, metadata));
 			matrix[i][0] = metadata.getCpu().getIdleTime();
-			matrix[i][1] = metadata.getMemory().getFreePercent();
+//			matrix[i][1] = metadata.getMemory().getFreePercent();
 		}
 		
 		double[] l2distances = calculateDistance(matrix);
