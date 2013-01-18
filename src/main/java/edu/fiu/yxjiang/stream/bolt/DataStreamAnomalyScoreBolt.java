@@ -21,28 +21,58 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 	private OutputCollector collector;
 	private double lambda;
 	private double factor;
+	private long previousTimestamp;
 	
-	public DataStreamAnomalyScoreBolt(double lambda) {
-		this.lambda = lambda;
+	public DataStreamAnomalyScoreBolt() {
 		this.factor = Math.pow(Math.E, -factor);
 	}
 	
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
+		this.lambda = Double.parseDouble(stormConf.get("lambda").toString());
 		this.streamProfiles = new HashMap<String, StreamProfile<T>>();
+		this.previousTimestamp = 0;
 	}
 
 	@Override
 	public void execute(Tuple input) {
+		
+		long timestamp = input.getLong(2);
+		
+		for(int i = 0; i < 10; ++i) {
+			System.out.println();
+		}
+		System.out.println(timestamp + "\t" + previousTimestamp);
+		for(int i = 0; i < 10; ++i) {
+			System.out.println();
+		}
+		
+		if(timestamp > previousTimestamp) {
+			
+			for(int i = 0; i < 10; ++i) {
+				System.out.println();
+			}
+			System.out.println(timestamp);
+			for(int i = 0; i < 10; ++i) {
+				System.out.println();
+			}
+			
+			print();
+			
+			previousTimestamp = timestamp;
+		}
+		
 		String id = input.getString(0);
 		StreamProfile profile = streamProfiles.get(id);
 		if(profile == null) {
 			profile = new StreamProfile<T>((T)input.getValue(3));
+			streamProfiles.put(id, profile);
 		}
 		else {
 			double dataInstanceAnomalyScore = input.getDouble(1);
 			profile.streamAnomalyScore = profile.streamAnomalyScore * factor + dataInstanceAnomalyScore;
+			streamProfiles.put(id, profile);
 		}
 		
 		this.collector.ack(input);
@@ -50,6 +80,22 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("id", "streamAnomalyScore", "timestamp", "observation"));		
+	}
+	
+	private void print() {
+		for(int i = 0; i < 15; ++i) {
+			System.out.println();
+		}
+		
+		System.out.println(streamProfiles.size());
+		
+		for(Map.Entry<String, StreamProfile<T>> entry : streamProfiles.entrySet()) {
+			System.out.println(entry.getKey() + "\t" + entry.getValue().streamAnomalyScore);
+		}
+		
+		for(int i = 0; i < 15; ++i) {
+			System.out.println();
+		}
 	}
 	
 	/**

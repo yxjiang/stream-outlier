@@ -43,9 +43,9 @@ public class ObservationScoreBolt extends BaseRichBolt{
 			//	a new batch of observation, calculate the scores of old batch and then emit 
 			if(observationList.size() != 0) {
 				List<ScorePackage> scorePackageList = dataInstanceScorer.getScores(observationList);
-				print(scorePackageList);
+//				print(scorePackageList);
 				for(ScorePackage scorePackage : scorePackageList) {
-					collector.emit(new Values(scorePackage.getId(), scorePackage.getScore(), scorePackage.getObj()));
+					collector.emit(new Values(scorePackage.getId(), scorePackage.getScore(), previousTimestamp, scorePackage.getObj()));
 				}
 				observationList.clear();
 			}

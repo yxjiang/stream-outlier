@@ -18,7 +18,6 @@ public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineM
 		List<ScorePackage> scorePackageList = new ArrayList<ScorePackage>();
 		
 		double[][] matrix = new double[observationList.size()][2];
-		int colNumber = matrix[0].length;
 		
 		for(int i = 0; i < observationList.size(); ++i)	 {
 			MachineMetadata metadata = observationList.get(i);
@@ -27,16 +26,30 @@ public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineM
 			matrix[i][1] = metadata.getMemory().getFreePercent();
 		}
 		
+		double[] l2distances = calculateDistance(matrix);
+		
+		for(int i = 0; i < observationList.size(); ++i)	 {
+			MachineMetadata metadata = observationList.get(i);
+			scorePackageList.add(new ScorePackage(metadata.getMachineIP(), l2distances[i], metadata));
+		}
+		
+		return scorePackageList;
+	}
+	
+	public double[] calculateDistance(double[][] matrix) {
 		double[] mins = new double[matrix[0].length];
 		double[] maxs = new double[matrix[0].length];
+		int colNumber = matrix[0].length;
 		
 		//	find min and max for each column
 		for(int col = 0; col < colNumber; ++col) {
 			double min = Double.MAX_VALUE;
 			double max = Double.MIN_VALUE;
 			for(int row = 0; row < matrix.length; ++row) {
-				if(matrix[row][col] > min) {
+				if(matrix[row][col] < min) {
 					min = matrix[row][col];
+				}
+				if(matrix[row][col] > max) {
 					max = matrix[row][col];
 				}
 			}
@@ -58,10 +71,35 @@ public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineM
 			centers[col] /= matrix.length;
 		}
 		
+//		printMatrix(matrix);
 		
+		double[][] distances = new double[matrix.length][matrix[0].length];
 		
+		for(int row = 0; row < matrix.length; ++row) {
+			for(int col = 0; col < matrix[row].length; ++col) {
+				distances[row][col] = Math.abs(matrix[row][col] - centers[col]);
+			}
+		}
 		
-		return scorePackageList;
+		double[] l2distances = new double[matrix.length];
+		for(int row = 0; row < l2distances.length; ++row) {
+			l2distances[row] = 0.0;
+			for(int col = 0; col < distances[row].length; ++col) {
+				l2distances[row] += Math.pow(distances[row][col], 2);
+			}
+			l2distances[row] = Math.sqrt(l2distances[row]);
+		}
+		
+		return l2distances;
+	}
+	
+	private void printMatrix(double[][] matrix) {
+		for(int i = 0; i < matrix.length; ++i) {
+			for(int j = 0; j < matrix[i].length; ++j) {
+				System.out.print(matrix[i][j] + "\t");
+			}
+			System.out.println();
+		}
 	}
 
 }
