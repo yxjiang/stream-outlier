@@ -3,23 +3,33 @@ package edu.fiu.yxjiang.stream.topology;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
 import javax.jms.Session;
+import javax.jms.TextMessage;
+
+import org.apache.activemq.broker.BrokerService;
 
 import sysmon.util.GlobalParameters;
 import sysmon.util.IPUtil;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
+import backtype.storm.contrib.jms.JmsMessageProducer;
 import backtype.storm.contrib.jms.JmsProvider;
 import backtype.storm.contrib.jms.JmsTupleProducer;
+import backtype.storm.contrib.jms.bolt.JmsBolt;
 import backtype.storm.contrib.jms.spout.JmsSpout;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
 import edu.fiu.yxjiang.stream.MetadataGather;
+import edu.fiu.yxjiang.stream.bolt.AlertTriggerBolt;
 import edu.fiu.yxjiang.stream.bolt.DataStreamAnomalyScoreBolt;
 import edu.fiu.yxjiang.stream.bolt.ObservationScoreBolt;
 import edu.fiu.yxjiang.stream.producer.GenericProducer;
-import edu.fiu.yxjiang.stream.provider.GenericProvider;
+import edu.fiu.yxjiang.stream.provider.GenericInputProvider;
+import edu.fiu.yxjiang.stream.provider.GenericOutputProvider;
 
 public class StreamAnomalyTopology {
 	
@@ -30,7 +40,30 @@ public class StreamAnomalyTopology {
 	public static final String DATA_INSTANCE_SCORER = "DATA INSTANCE SCORER";
 	public static final String STREAM_SCORER = "STREAM SCORER";
 	public static final String ALERT_TRIGGER = "ALERT TRIGGER";
+	public static final String ALERT_JMS_BOLT = "ALERT JMS BOLT";
+	
+	public static final String ALERT_TOPIC = "alert";
+	
+	public static final int ALERT_PORT = 33333;
+	public static final String alertBrokerAddress = "tcp://" + IPUtil.getFirstAvailableIP() + ":" + ALERT_PORT;
 
+	public static BrokerService broker;
+	
+	public static void initAlertBroker() {
+		broker = new BrokerService();
+		broker.setBrokerName("commandBroker");
+		try {
+			broker.setPersistent(false);
+			broker.setUseJmx(false);
+			broker.addConnector(alertBrokerAddress);
+			broker.start();
+			System.out.println("Alert broker started...");
+			System.out.println("Send message to " + alertBrokerAddress);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	@SuppressWarnings("serial")
 	public static void main(String[] args) throws Exception {
 
@@ -44,6 +77,8 @@ public class StreamAnomalyTopology {
 		
 		MetadataGather gather = new MetadataGather(gatherIP, list);
 		System.out.println("Gather broker setted!!");
+		
+		initAlertBroker();
 
 		//	the gather that aggregate all the message 
 		String gatherBrokerAddress = "tcp://" + gatherIP + ":" + GlobalParameters.SUBSCRIBE_COMMAND_PORT;
@@ -51,13 +86,13 @@ public class StreamAnomalyTopology {
 		List<String> gatherBrokerAddressList = new ArrayList<String>();
 		gatherBrokerAddressList.add(gatherBrokerAddress);
 
-		// JMS Queue Provider
-		JmsProvider jmsTopicProvider = new GenericProvider(gatherBrokerAddressList, JMS_INPUT_JMS_TOPIC);
+		// JMS Topic Provider
+		JmsProvider jmsTopicProvider = new GenericInputProvider(gatherBrokerAddressList, JMS_INPUT_JMS_TOPIC);
 		
 		// JMS Producer
 		JmsTupleProducer producer = new GenericProducer(DATA_TYPE);
 
-		// JMS Queue Spout
+		// JMS Topic Spout
 		JmsSpout queueSpout = new JmsSpout();
 		queueSpout.setJmsProvider(jmsTopicProvider);
 		queueSpout.setJmsTupleProducer(producer);
@@ -75,6 +110,25 @@ public class StreamAnomalyTopology {
 		
 		DataStreamAnomalyScoreBolt streamScoreBolt = new DataStreamAnomalyScoreBolt();
 		builder.setBolt(STREAM_SCORER, streamScoreBolt, 1).fieldsGrouping(DATA_INSTANCE_SCORER, new Fields("id"));
+		
+		AlertTriggerBolt alertTriggerBolt = new AlertTriggerBolt();
+		builder.setBolt(ALERT_TRIGGER, alertTriggerBolt, 1).shuffleGrouping(STREAM_SCORER);
+		
+		JmsProvider jmsOutputTopicProvider = new GenericOutputProvider(alertBrokerAddress, ALERT_TOPIC);
+		JmsBolt jmsBolt = new JmsBolt();
+		jmsBolt.setJmsProvider(jmsOutputTopicProvider);
+
+		jmsBolt.setJmsMessageProducer(new JmsMessageProducer() {
+			@Override
+			public Message toMessage(Session session, Tuple input) throws JMSException {
+				String message = input.getString(0) + ":" + input.getDouble(1);
+//				String message = input.getString(0);
+				TextMessage tm = session.createTextMessage(message);
+				return tm;
+			}
+		});
+
+		builder.setBolt(ALERT_JMS_BOLT, jmsBolt).shuffleGrouping(ALERT_TRIGGER);
 		
 		double lambda = 0.5;	//	exponential decay parameter
 		Config conf = new Config();

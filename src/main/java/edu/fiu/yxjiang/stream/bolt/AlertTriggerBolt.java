@@ -10,6 +10,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 import edu.fiu.yxjiang.stream.util.BFPRT;
 
 /**
@@ -35,38 +36,105 @@ public class AlertTriggerBolt extends BaseRichBolt {
 		long timestamp = input.getLong(2);
 		if(timestamp > previousTimestamp) {
 			//	new batch of stream scores
-			List<Object> abnormalStreams = this.identifyAbnormalStreams();
-			streamList.clear();
+			if(streamList.size() != 0) {
+				List<Tuple> abnormalStreams = this.identifyAbnormalStreams();
+				for(Tuple abnormal : abnormalStreams) {
+					collector.emit(new Values(abnormal.getString(0), abnormal.getDouble(1)));
+				}
+				this.streamList.clear();
+			}
 			
-			//	generate alert message
-		}
-		else if(timestamp == previousTimestamp) {
-			streamList.add(input);
+			this.previousTimestamp = timestamp;
 		}
 		
+		this.streamList.add(input);
 		this.collector.ack(input);
 	}
 
+//	@Override
+//	public void execute(Tuple input) {
+//		long timestamp = input.getLong(2);
+//		if(timestamp > previousTimestamp) {
+//			if(streamList.size() != 0) {
+//				String message = this.identifyAbnormalStreamsTest();
+//				this.collector.emit(new Values(message));
+//				this.streamList.clear();
+//			}
+//			this.previousTimestamp = timestamp;
+//		}
+//		
+//		this.streamList.add(input);
+//		this.collector.ack(input);
+//	}
+
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("anomalyStream"));
+		declarer.declare(new Fields("anomalyStream", "streamAnomalyScore"));
+//		declarer.declare(new Fields("message"));
 	}
 	
 	/**
 	 * Identify the abnormal streams.
 	 * @return
 	 */
-	private List<Object> identifyAbnormalStreams() {
-		List<Object> abnormalStreamList = new ArrayList<Object>();
-		int medianIdx = (int)Math.round(streamList.size() / 2 + 0.5);
-		Tuple medianTuple = BFPRT.bfprt(streamList, medianIdx);
-		for(int i = medianIdx + 1; i < streamList.size(); ++i) {
-			Tuple stream = streamList.get(i);
-			if(stream.getLong(1) > 2 * medianTuple.getLong(1)) {
-				abnormalStreamList.add(stream.getValue(3));
+	private List<Tuple> identifyAbnormalStreams() {
+		List<Tuple> abnormalStreamList = new ArrayList<Tuple>();
+		
+		double minScore = Double.MAX_VALUE;
+		for(int i = 0; i < streamList.size(); ++i) {
+			Tuple tuple = streamList.get(i);
+			if(minScore > tuple.getDouble(1)) {
+				minScore = tuple.getDouble(1);
 			}
 		}
+		
+		int medianIdx = (int)Math.round(streamList.size() / 2);
+		Tuple medianTuple = BFPRT.bfprt(streamList, medianIdx);
+		
+		for(int i = medianIdx + 1; i < streamList.size(); ++i) {
+			Tuple stream = streamList.get(i);
+			if(stream.getDouble(1) - medianTuple.getDouble(1) > medianTuple.getDouble(1) - minScore) {
+				abnormalStreamList.add(stream);
+			}
+		}
+		
 		return abnormalStreamList;
+	}
+	
+	
+	private String identifyAbnormalStreamsTest() {
+		String message = "";
+		List<Tuple> abnormalStreamList = new ArrayList<Tuple>();
+		
+		double minScore = Double.MAX_VALUE;
+		for(int i = 0; i < streamList.size(); ++i) {
+			Tuple tuple = streamList.get(i);
+			if(minScore > tuple.getDouble(1)) {
+				minScore = tuple.getDouble(1);
+			}
+		}
+		
+		int medianIdx = (int)Math.round(streamList.size() / 2);
+		Tuple medianTuple = BFPRT.bfprt(streamList, medianIdx);
+		
+		for(int i = medianIdx + 1; i < streamList.size(); ++i) {
+			Tuple streamTuple = streamList.get(i);
+			message += streamTuple.getString(0) + ":" + streamTuple.getDouble(1);
+			if(streamTuple.getDouble(1) == medianTuple.getDouble(1)) {
+				message += "(Median)\n";
+			}
+			else if(streamTuple.getDouble(1) - medianTuple.getDouble(1) > medianTuple.getDouble(1) - minScore) {
+				message += "(Outlier)\n";
+			}
+			else if(streamTuple.getDouble(1) == minScore) {
+				message += "(Min)\n";
+			}
+			else {
+				message += "\n";
+			}
+		}
+	
+		return message;
 	}
 	
 }

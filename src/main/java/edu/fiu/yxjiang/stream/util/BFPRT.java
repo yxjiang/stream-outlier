@@ -22,11 +22,18 @@ public class BFPRT {
 		
 		List<TupleWrapper> tupleWrapperList = new ArrayList<TupleWrapper>();
 		for(Tuple tuple : tupleList) {
-			tupleWrapperList.add(new TupleWrapper(tuple.getLong(1), tuple));
+			tupleWrapperList.add(new TupleWrapper(tuple.getDouble(1), tuple));
 		}
 		
 		insertionSort(tupleWrapperList, 0, tupleWrapperList.size());
-		return tupleWrapperList.get(((int)(tupleWrapperList.size() / 2))).tuple;
+		
+		tupleList.clear();
+
+		for(TupleWrapper wrapper : tupleWrapperList) {
+			tupleList.add(wrapper.tuple);
+		}
+		
+		return tupleWrapperList.get(i).tuple;
 
 		
 //		return bfprtWrapper(tupleWrapperList, i, 0, tupleWrapperList.size()).tuple;
@@ -86,7 +93,7 @@ public class BFPRT {
 			int iHole = i;
 			TupleWrapper wrapper = tupleWrapperList.get(iHole);
 			while(iHole > 0 && tupleWrapperList.get(iHole - 1).compareTo(wrapper) > 0) {
-				tupleWrapperList.set(iHole - 1, wrapper);
+				tupleWrapperList.set(iHole, tupleWrapperList.get(iHole - 1));
 				--iHole;
 			}
 			tupleWrapperList.set(iHole, wrapper);

@@ -1,7 +1,5 @@
 package edu.fiu.yxjiang.stream.provider;
 
-import java.util.List;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -13,23 +11,13 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 import backtype.storm.contrib.jms.JmsProvider;
 
-/**
- * GenericProvider is in charge of connect to the message brokers.
- * It will feed message to the spout.
- * @author yexijiang
- *
- */
-public class GenericProvider implements JmsProvider{
+public class GenericOutputProvider implements JmsProvider {
 
-	private static int providerCount = 0;	//	total number of providers
-	
-	private int providerIdx;
 	private ConnectionFactory connectionFactory;
 	private Topic destination;
 	
-	public GenericProvider(List<String> gatherBrokerAddressList, String topicName) {
-		this.providerIdx = providerCount++;
-		this.connectionFactory = new ActiveMQConnectionFactory(gatherBrokerAddressList.get(this.providerIdx));
+	public GenericOutputProvider(String outputBrokerAddress, String topicName) {
+		this.connectionFactory = new ActiveMQConnectionFactory(outputBrokerAddress);
 		try {
 			Connection connection = this.connectionFactory.createConnection();
 			Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -37,7 +25,6 @@ public class GenericProvider implements JmsProvider{
 		} catch (JMSException e) {
 			e.printStackTrace();
 		}
-		
 	}
 	
 	@Override
@@ -49,4 +36,5 @@ public class GenericProvider implements JmsProvider{
 	public Destination destination() throws Exception {
 		return this.destination;
 	}
+
 }

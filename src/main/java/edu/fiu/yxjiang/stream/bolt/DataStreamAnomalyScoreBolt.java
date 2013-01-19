@@ -1,9 +1,7 @@
 package edu.fiu.yxjiang.stream.bolt;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -11,6 +9,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 
 /**
  * DataStreamAnomalyScoreBolt keeps and update the stream anomaly score for each stream.
@@ -26,13 +25,14 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 	private long previousTimestamp;
 	
 	public DataStreamAnomalyScoreBolt() {
-		this.factor = Math.pow(Math.E, -lambda);
+		
 	}
 	
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
 		this.lambda = Double.parseDouble(stormConf.get("lambda").toString());
+		this.factor = Math.pow(Math.E, -lambda);
 		this.streamProfiles = new HashMap<String, StreamProfile<T>>();
 		this.previousTimestamp = 0;
 	}
@@ -44,7 +44,11 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		
 		if(timestamp > previousTimestamp) {
 			
-			print();
+			String alertMessage = "" + previousTimestamp + "\n";
+			for(Map.Entry<String, StreamProfile<T>> streamProfileEntry : streamProfiles.entrySet()) {
+				StreamProfile streamProfile = streamProfileEntry.getValue();
+				collector.emit(new Values(streamProfileEntry.getKey(), streamProfile.streamAnomalyScore, previousTimestamp, streamProfile.currentDataInstance));
+			}
 			
 			previousTimestamp = timestamp;
 		}
@@ -52,13 +56,12 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		String id = input.getString(0);
 		StreamProfile profile = streamProfiles.get(id);
 		if(profile == null) {
-			profile = new StreamProfile<T>((T)input.getValue(3));
+			profile = new StreamProfile<T>((T)input.getValue(3), input.getDouble(1));
 			streamProfiles.put(id, profile);
 		}
 		else {
 			double dataInstanceAnomalyScore = input.getDouble(1);
 			profile.streamAnomalyScore = profile.streamAnomalyScore * factor + dataInstanceAnomalyScore;
-			profile.streamAnomalyScore = profile.streamAnomalyScore + dataInstanceAnomalyScore;
 			streamProfiles.put(id, profile);
 		}
 		
@@ -67,6 +70,7 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("id", "streamAnomalyScore", "timestamp", "observation"));		
+//		declarer.declare(new Fields("alertMessage"));
 	}
 	
 	private void print() {
@@ -93,8 +97,8 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		double streamAnomalyScore;
 		T currentDataInstance;
 		
-		public StreamProfile(T dataInstanceScore) {
-			this.streamAnomalyScore = 0.0;
+		public StreamProfile(T dataInstanceScore, double initialAnomalyScore) {
+			this.streamAnomalyScore = initialAnomalyScore;
 			this.currentDataInstance = dataInstanceScore;
 		}
 	}
