@@ -22,6 +22,8 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 	private OutputCollector collector;
 	private double lambda;
 	private double factor;
+	private double threashold;
+	private boolean shrinkNextRound;
 	private long previousTimestamp;
 	
 	public DataStreamAnomalyScoreBolt() {
@@ -33,6 +35,8 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		this.collector = collector;
 		this.lambda = Double.parseDouble(stormConf.get("lambda").toString());
 		this.factor = Math.pow(Math.E, -lambda);
+		this.threashold = 1 / (1 - factor) / 2;
+		this.shrinkNextRound = false;
 		this.streamProfiles = new HashMap<String, StreamProfile<T>>();
 		this.previousTimestamp = 0;
 	}
@@ -42,27 +46,38 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		
 		long timestamp = input.getLong(2);
 		
-		if(timestamp > previousTimestamp) {
-			
-			String alertMessage = "" + previousTimestamp + "\n";
-			for(Map.Entry<String, StreamProfile<T>> streamProfileEntry : streamProfiles.entrySet()) {
+		if(timestamp > this.previousTimestamp) {
+			String alertMessage = "" + this.previousTimestamp + "\n";
+			for(Map.Entry<String, StreamProfile<T>> streamProfileEntry : this.streamProfiles.entrySet()) {
 				StreamProfile streamProfile = streamProfileEntry.getValue();
-				collector.emit(new Values(streamProfileEntry.getKey(), streamProfile.streamAnomalyScore, previousTimestamp, streamProfile.currentDataInstance));
+				if(this.shrinkNextRound == true) {
+					streamProfile.streamAnomalyScore *= 0.5;
+				}
+//				this.streamProfiles.put(streamProfile.id, streamProfile);
+				this.collector.emit(new Values(streamProfileEntry.getKey(), 
+																				streamProfile.streamAnomalyScore, 
+																				this.previousTimestamp, 
+																				streamProfile.currentDataInstance));
 			}
-			
-			previousTimestamp = timestamp;
+			if(this.shrinkNextRound == true) {
+				this.shrinkNextRound = false;
+			}
+			this.previousTimestamp = timestamp;
 		}
 		
 		String id = input.getString(0);
-		StreamProfile profile = streamProfiles.get(id);
+		StreamProfile profile = this.streamProfiles.get(id);
 		if(profile == null) {
-			profile = new StreamProfile<T>((T)input.getValue(3), input.getDouble(1));
-			streamProfiles.put(id, profile);
+			profile = new StreamProfile<T>(id, (T)input.getValue(3), input.getDouble(1));
+			this.streamProfiles.put(id, profile);
 		}
 		else {
 			double dataInstanceAnomalyScore = input.getDouble(1);
 			profile.streamAnomalyScore = profile.streamAnomalyScore * factor + dataInstanceAnomalyScore;
-			streamProfiles.put(id, profile);
+			if(profile.streamAnomalyScore > this.threashold) {
+				this.shrinkNextRound = true;
+			}
+			this.streamProfiles.put(id, profile);
 		}
 		
 		this.collector.ack(input);
@@ -94,10 +109,12 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 	 * @param <T>
 	 */
 	class StreamProfile<T> {
+		String id;
 		double streamAnomalyScore;
 		T currentDataInstance;
 		
-		public StreamProfile(T dataInstanceScore, double initialAnomalyScore) {
+		public StreamProfile(String id, T dataInstanceScore, double initialAnomalyScore) {
+			this.id = id;
 			this.streamAnomalyScore = initialAnomalyScore;
 			this.currentDataInstance = dataInstanceScore;
 		}

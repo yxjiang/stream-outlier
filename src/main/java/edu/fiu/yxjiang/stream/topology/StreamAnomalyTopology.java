@@ -1,6 +1,7 @@
 package edu.fiu.yxjiang.stream.topology;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.jms.JMSException;
@@ -22,7 +23,6 @@ import backtype.storm.contrib.jms.spout.JmsSpout;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import backtype.storm.utils.Utils;
 import edu.fiu.yxjiang.stream.MetadataGather;
 import edu.fiu.yxjiang.stream.bolt.AlertTriggerBolt;
 import edu.fiu.yxjiang.stream.bolt.DataStreamAnomalyScoreBolt;
@@ -121,7 +121,7 @@ public class StreamAnomalyTopology {
 		jmsBolt.setJmsMessageProducer(new JmsMessageProducer() {
 			@Override
 			public Message toMessage(Session session, Tuple input) throws JMSException {
-				String message = input.getString(0) + ":" + input.getDouble(1);
+				String message = "time (" + new Date(input.getLong(2) * 1000) + ")\t" + input.getString(0) + ":" + input.getDouble(1);
 //				String message = input.getString(0);
 				TextMessage tm = session.createTextMessage(message);
 				return tm;
@@ -130,17 +130,19 @@ public class StreamAnomalyTopology {
 
 		builder.setBolt(ALERT_JMS_BOLT, jmsBolt).shuffleGrouping(ALERT_TRIGGER);
 		
-		double lambda = 0.5;	//	exponential decay parameter
+		double lambda = 0.01;	//	exponential decay parameter
 		Config conf = new Config();
 		conf.setDebug(true);
 		conf.put("lambda", lambda);
 		LocalCluster cluster = new LocalCluster();
 		cluster.submitTopology("storm-jms-example", conf, builder.createTopology());
-		Utils.sleep(1000000);
-		cluster.killTopology("storm-jms-example");
-		cluster.shutdown();
-		gather.close();
-		System.exit(1);
+//		while(true) {
+//			Utils.sleep(1000000);
+//		}
+//		cluster.killTopology("storm-jms-example");
+//		cluster.shutdown();
+//		gather.close();
+//		System.exit(1);
 	}
 
 }

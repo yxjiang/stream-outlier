@@ -20,6 +20,7 @@ import edu.fiu.yxjiang.stream.util.BFPRT;
  */
 public class AlertTriggerBolt extends BaseRichBolt {
 	
+	private static final double dupper = 1.0;
 	private long previousTimestamp;
 	private OutputCollector collector;
 	private List<Tuple> streamList;
@@ -39,7 +40,7 @@ public class AlertTriggerBolt extends BaseRichBolt {
 			if(streamList.size() != 0) {
 				List<Tuple> abnormalStreams = this.identifyAbnormalStreams();
 				for(Tuple abnormal : abnormalStreams) {
-					collector.emit(new Values(abnormal.getString(0), abnormal.getDouble(1)));
+					collector.emit(new Values(abnormal.getString(0), abnormal.getDouble(1), abnormal.getLong(2)));
 				}
 				this.streamList.clear();
 			}
@@ -69,7 +70,7 @@ public class AlertTriggerBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("anomalyStream", "streamAnomalyScore"));
+		declarer.declare(new Fields("anomalyStream", "streamAnomalyScore", "timestamp"));
 //		declarer.declare(new Fields("message"));
 	}
 	
@@ -80,24 +81,35 @@ public class AlertTriggerBolt extends BaseRichBolt {
 	private List<Tuple> identifyAbnormalStreams() {
 		List<Tuple> abnormalStreamList = new ArrayList<Tuple>();
 		
-		double minScore = Double.MAX_VALUE;
-		for(int i = 0; i < streamList.size(); ++i) {
-			Tuple tuple = streamList.get(i);
-			if(minScore > tuple.getDouble(1)) {
-				minScore = tuple.getDouble(1);
-			}
-		}
+//		double minScore = Double.MAX_VALUE;
+//		for(int i = 0; i < streamList.size(); ++i) {
+//			Tuple tuple = streamList.get(i);
+//			if(minScore > tuple.getDouble(1)) {
+//				minScore = tuple.getDouble(1);
+//			}
+//		}
 		
 		int medianIdx = (int)Math.round(streamList.size() / 2);
 		Tuple medianTuple = BFPRT.bfprt(streamList, medianIdx);
+		double minScore = Double.MAX_VALUE;
+		for(int i = 0; i < medianIdx; ++i) {
+			double score = streamList.get(i).getDouble(1);
+			if(score < minScore) {
+				minScore = score; 
+			}
+		}
+		
+		double medianScore = medianTuple.getDouble(1);
 		
 		for(int i = medianIdx + 1; i < streamList.size(); ++i) {
 			Tuple stream = streamList.get(i);
-			if(stream.getDouble(1) - medianTuple.getDouble(1) > medianTuple.getDouble(1) - minScore) {
+			double streamScore = stream.getDouble(1);
+			if((streamScore > 2 * medianScore - minScore) && (streamScore > minScore + 2 * dupper)) {
 				abnormalStreamList.add(stream);
 			}
 		}
 		
+//		abnormalStreamList.addAll(streamList);
 		return abnormalStreamList;
 	}
 	
