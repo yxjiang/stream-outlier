@@ -20,7 +20,8 @@ public class TestBFPRT {
 	public void before() {
 		Random rnd = new Random();
 		wrapperList = new ArrayList<TupleWrapper>();
-		for(int i = 0; i < 117; ++i) {
+		System.out.println("Before");
+		for(int i = 0; i < 2; ++i) {
 			TupleWrapper wrapper = new TupleWrapper(rnd.nextInt(500), null);
 			wrapperList.add(wrapper);
 			System.out.print(wrapper.score + "\t");
@@ -75,8 +76,11 @@ public class TestBFPRT {
 	@Test
 	public void testBfprtWrapper() {
 		int k = (int)Math.round(wrapperList.size() / 2);
-		BFPRT.insertionSort(wrapperList, 0, wrapperList.size() - 1);
-		TupleWrapper median = wrapperList.get(k);
+		System.out.println(k);
+//		BFPRT.insertionSort(wrapperList, 0, wrapperList.size() - 1);
+//		TupleWrapper median = wrapperList.get(k);
+	
+		TupleWrapper median = BFPRT.bfprtWrapper(wrapperList, k, 0, wrapperList.size() - 1);
 		
 		for(int i = 0; i < wrapperList.size(); ++i) {
 			System.out.print(wrapperList.get(i).score + "\t");

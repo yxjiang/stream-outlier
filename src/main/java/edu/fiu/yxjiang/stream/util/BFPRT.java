@@ -25,36 +25,37 @@ public class BFPRT {
 			tupleWrapperList.add(new TupleWrapper(tuple.getDouble(1), tuple));
 		}
 		
-		insertionSort(tupleWrapperList, 0, tupleWrapperList.size());
+//		insertionSort(tupleWrapperList, 0, tupleWrapperList.size());
 		
+//		return tupleWrapperList.get(i).tuple;
+
+		
+		Tuple medianTuple = bfprtWrapper(tupleWrapperList, i, 0, tupleWrapperList.size() - 1).tuple;
 		tupleList.clear();
 
 		for(TupleWrapper wrapper : tupleWrapperList) {
 			tupleList.add(wrapper.tuple);
 		}
 		
-//		return tupleWrapperList.get(i).tuple;
-
-		
-		return bfprtWrapper(tupleWrapperList, i, 0, tupleWrapperList.size()).tuple;
+		return medianTuple;
 	}
 	
 	public static TupleWrapper bfprtWrapper(List<TupleWrapper> tupleWrapperList, int i, int left, int right) {
 		
 		if(left == right) {
-			return tupleWrapperList.get(left);
+			return tupleWrapperList.get(right);
 		}
 		
 		int p = partitionSingleSide(tupleWrapperList, left, right);
 		
-		if(p == i - 1) {	
+		if(p == i) {	
 			return tupleWrapperList.get(p);
 		}
-		else if (p <  i -1) {	//	recursively find left part
-			return bfprtWrapper(tupleWrapperList, left, p - 1, i);
+		else if (p < i) {	//	recursively find right part
+			return bfprtWrapper(tupleWrapperList, i, p + 1, right);
 		}
-		else {	//	recursively find right part
-			return bfprtWrapper(tupleWrapperList, p + 1, right, i);
+		else { 	// (p > i)	recursively find left part
+			return bfprtWrapper(tupleWrapperList,i , left, p - 1);
 		}
 	}
 	
@@ -88,7 +89,7 @@ public class BFPRT {
 	 * @param right
 	 */
 	public static void insertionSort(List<TupleWrapper> tupleWrapperList, int left, int right) {
-		for(int i = left + 1; i < right; ++i) {
+		for(int i = left + 1; i <= right; ++i) {
 			int iHole = i;
 			TupleWrapper wrapper = tupleWrapperList.get(iHole);
 			while(iHole > 0 && tupleWrapperList.get(iHole - 1).compareTo(wrapper) > 0) {
