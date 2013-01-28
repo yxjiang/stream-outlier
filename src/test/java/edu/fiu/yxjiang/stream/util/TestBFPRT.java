@@ -20,7 +20,7 @@ public class TestBFPRT {
 	public void before() {
 		Random rnd = new Random();
 		wrapperList = new ArrayList<TupleWrapper>();
-		for(int i = 0; i < 7; ++i) {
+		for(int i = 0; i < 117; ++i) {
 			TupleWrapper wrapper = new TupleWrapper(rnd.nextInt(500), null);
 			wrapperList.add(wrapper);
 			System.out.print(wrapper.score + "\t");

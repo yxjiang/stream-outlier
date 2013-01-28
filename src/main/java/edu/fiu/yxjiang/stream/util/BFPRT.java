@@ -33,10 +33,10 @@ public class BFPRT {
 			tupleList.add(wrapper.tuple);
 		}
 		
-		return tupleWrapperList.get(i).tuple;
+//		return tupleWrapperList.get(i).tuple;
 
 		
-//		return bfprtWrapper(tupleWrapperList, i, 0, tupleWrapperList.size()).tuple;
+		return bfprtWrapper(tupleWrapperList, i, 0, tupleWrapperList.size()).tuple;
 	}
 	
 	public static TupleWrapper bfprtWrapper(List<TupleWrapper> tupleWrapperList, int i, int left, int right) {
@@ -45,17 +45,16 @@ public class BFPRT {
 			return tupleWrapperList.get(left);
 		}
 		
-		int q = partitionSingleSide(tupleWrapperList, left, right);
+		int p = partitionSingleSide(tupleWrapperList, left, right);
 		
-		int k = q - left + 1; 
-		if(i > k) {	//	recursively find right part
-			return bfprtWrapper(tupleWrapperList, q + 1, right, i);
+		if(p == i - 1) {	
+			return tupleWrapperList.get(p);
 		}
-		else if (i < k) {	//	recursively find left part
-			return bfprtWrapper(tupleWrapperList, left, q - 1, i - k + 1);
+		else if (p <  i -1) {	//	recursively find left part
+			return bfprtWrapper(tupleWrapperList, left, p - 1, i);
 		}
-		else {
-			return tupleWrapperList.get(q);
+		else {	//	recursively find right part
+			return bfprtWrapper(tupleWrapperList, p + 1, right, i);
 		}
 	}
 	
