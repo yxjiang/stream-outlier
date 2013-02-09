@@ -17,20 +17,20 @@ public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineM
 	public List<ScorePackage> getScores(List<MachineMetadata> observationList) {
 		List<ScorePackage> scorePackageList = new ArrayList<ScorePackage>();
 		
-		double[][] matrix = new double[observationList.size()][1];
+		double[][] matrix = new double[observationList.size()][2];
 		
 		for(int i = 0; i < observationList.size(); ++i)	 {
 			MachineMetadata metadata = observationList.get(i);
-			scorePackageList.add(new ScorePackage(metadata.getMachineIP(), 1.0, metadata));
+//			scorePackageList.add(new ScorePackage(metadata.getMachineIP(), 1.0, metadata));
 			matrix[i][0] = metadata.getCpu().getIdleTime();
-//			matrix[i][1] = metadata.getMemory().getActualFree();
+			matrix[i][1] = metadata.getMemory().getUsedPercent();
 		}
 		
 		double[] l2distances = calculateDistance(matrix);
 		
 		for(int i = 0; i < observationList.size(); ++i)	 {
 			MachineMetadata metadata = observationList.get(i);
-			scorePackageList.add(new ScorePackage(metadata.getMachineIP(), l2distances[i], metadata));
+			scorePackageList.add(new ScorePackage(metadata.getMachineIP(), 1.0 + l2distances[i], metadata));
 		}
 		
 		return scorePackageList;
@@ -56,6 +56,12 @@ public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineM
 			mins[col] = min;
 			maxs[col] = max;
 		}
+		//	cpu 
+		mins[0] = 0.0;
+		maxs[0] = 1.0;
+		//	memory
+		mins[1] = 0.0;
+		maxs[1] = 100.0;
 		
 		//	min-max normalization by column
 		double[] centers = new double[colNumber];

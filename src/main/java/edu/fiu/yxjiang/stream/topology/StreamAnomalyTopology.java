@@ -6,11 +6,13 @@ import java.util.List;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.ObjectMessage;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.BrokerService;
 
+import sysmon.common.metadata.MachineMetadata;
 import sysmon.util.GlobalParameters;
 import sysmon.util.IPUtil;
 import backtype.storm.Config;
@@ -30,6 +32,7 @@ import edu.fiu.yxjiang.stream.bolt.ObservationScoreBolt;
 import edu.fiu.yxjiang.stream.producer.GenericProducer;
 import edu.fiu.yxjiang.stream.provider.GenericInputProvider;
 import edu.fiu.yxjiang.stream.provider.GenericOutputProvider;
+import edu.fiu.yxjiang.stream.util.Bean;
 
 public class StreamAnomalyTopology {
 	
@@ -121,10 +124,19 @@ public class StreamAnomalyTopology {
 		jmsBolt.setJmsMessageProducer(new JmsMessageProducer() {
 			@Override
 			public Message toMessage(Session session, Tuple input) throws JMSException {
-				String message = "time (" + new Date(input.getLong(2) * 1000) + ")\t" + input.getString(0) + ":" + input.getDouble(1);
+//				String message = "time (" + new Date(input.getLong(2) * 1000) + ")\t" + input.getString(0) + ":" + input.getDouble(1);
 //				String message = input.getString(0);
-				TextMessage tm = session.createTextMessage(message);
-				return tm;
+//				TextMessage tm = session.createTextMessage(message);
+				
+				Bean bean = new Bean();
+				bean.timestamp = input.getLong(2);
+				bean.id = input.getString(0);
+				bean.score = input.getDouble(1);
+				bean.isAbnormal = input.getBoolean(3);
+				bean.observation = (MachineMetadata)input.getValue(4);
+				
+				ObjectMessage om = session.createObjectMessage(bean);
+				return om;
 			}
 		});
 
