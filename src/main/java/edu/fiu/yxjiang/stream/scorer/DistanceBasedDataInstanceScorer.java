@@ -23,7 +23,7 @@ public class DistanceBasedDataInstanceScorer extends DataInstanceScorer<MachineM
 			MachineMetadata metadata = observationList.get(i);
 //			scorePackageList.add(new ScorePackage(metadata.getMachineIP(), 1.0, metadata));
 			matrix[i][0] = metadata.getCpu().getIdleTime();
-			matrix[i][1] = metadata.getMemory().getUsedPercent();
+			matrix[i][1] = metadata.getMemory().getFreePercent();
 		}
 		
 		double[] l2distances = calculateDistance(matrix);

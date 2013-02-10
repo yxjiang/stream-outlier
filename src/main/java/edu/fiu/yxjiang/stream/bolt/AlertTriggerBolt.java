@@ -25,7 +25,7 @@ public class AlertTriggerBolt extends BaseRichBolt {
 	private OutputCollector collector;
 	private List<Tuple> streamList;
 	private double minDataInstanceScore = Double.MAX_VALUE;
-	private double maxDataInstanceScore = Double.MIN_VALUE;
+	private double maxDataInstanceScore = 0;
 	
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
@@ -41,7 +41,7 @@ public class AlertTriggerBolt extends BaseRichBolt {
 			//	new batch of stream scores
 			if(streamList.size() != 0) {
 				List<Tuple> abnormalStreams = this.identifyAbnormalStreams();
-				int medianIdx = (int)Math.round(streamList.size() / 2);
+				int medianIdx = (int)streamList.size() / 2;
 				double minScore = abnormalStreams.get(0).getDouble(1);
 				double medianScore = abnormalStreams.get(medianIdx).getDouble(1);
 				for(int i = 0; i < abnormalStreams.size(); ++i) {
@@ -49,17 +49,20 @@ public class AlertTriggerBolt extends BaseRichBolt {
 					double streamScore = streamProfile.getDouble(1);
 					double curDataInstScore = streamProfile.getDouble(4);
 					boolean isAbnormal = false;
-					if((curDataInstScore > (maxDataInstanceScore - minDataInstanceScore) * 0.8 + minDataInstanceScore) //	cur abnormal stream returns to normal
-							&& (streamScore > 2 * medianScore - minScore) //	cur stream score deviates from the majority
-							&& (streamScore > minScore + 2 * dupper)) {	//	mitigate the initial disturbance
-						isAbnormal = true;
+					
+					if((streamScore > 2 * medianScore - minScore) &&  //	cur stream score deviates from the majority
+							(streamScore > minScore + 2 * dupper)) {
+						//	check whether cur data instance score return to normal
+						if(curDataInstScore > 0.1 + minDataInstanceScore) {
+							isAbnormal = true;
+						}
 					}
 					
-					collector.emit(new Values(streamProfile.getString(0), streamProfile.getDouble(1), streamProfile.getLong(2), isAbnormal, streamProfile.getValue(3)));
+					collector.emit(new Values(streamProfile.getString(0), streamScore, streamProfile.getLong(2), isAbnormal, streamProfile.getValue(3)));
 				}
 				this.streamList.clear();
 				minDataInstanceScore = Double.MAX_VALUE;
-				maxDataInstanceScore = Double.MIN_VALUE;
+				maxDataInstanceScore = 0;
 			}
 			
 			this.previousTimestamp = timestamp;
@@ -77,26 +80,9 @@ public class AlertTriggerBolt extends BaseRichBolt {
 		this.collector.ack(input);
 	}
 
-//	@Override
-//	public void execute(Tuple input) {
-//		long timestamp = input.getLong(2);
-//		if(timestamp > previousTimestamp) {
-//			if(streamList.size() != 0) {
-//				String message = this.identifyAbnormalStreamsTest();
-//				this.collector.emit(new Values(message));
-//				this.streamList.clear();
-//			}
-//			this.previousTimestamp = timestamp;
-//		}
-//		
-//		this.streamList.add(input);
-//		this.collector.ack(input);
-//	}
-
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("anomalyStream", "streamAnomalyScore", "timestamp", "isAbnormal", "observation"));
-//		declarer.declare(new Fields("message"));
 	}
 	
 	/**
@@ -105,73 +91,10 @@ public class AlertTriggerBolt extends BaseRichBolt {
 	 */
 	private List<Tuple> identifyAbnormalStreams() {
 		List<Tuple> abnormalStreamList = new ArrayList<Tuple>();
-		
-//		double minScore = Double.MAX_VALUE;
-//		for(int i = 0; i < streamList.size(); ++i) {
-//			Tuple tuple = streamList.get(i);
-//			if(minScore > tuple.getDouble(1)) {
-//				minScore = tuple.getDouble(1);
-//			}
-//		}
-		
-		int medianIdx = (int)Math.round(streamList.size() / 2);
-		Tuple medianTuple = BFPRT.bfprt(streamList, medianIdx);
-		double minScore = Double.MAX_VALUE;
-		for(int i = 0; i < medianIdx; ++i) {
-			double score = streamList.get(i).getDouble(1);
-			if(score < minScore) {
-				minScore = score; 
-			}
-		}
-		
-		double medianScore = medianTuple.getDouble(1);
-		
-//		for(int i = medianIdx + 1; i < streamList.size(); ++i) {
-//			Tuple stream = streamList.get(i);
-//			double streamScore = stream.getDouble(1);
-//			if((streamScore > 2 * medianScore - minScore) && (streamScore > minScore + 2 * dupper)) {
-//				abnormalStreamList.add(stream);
-//			}
-//		}
-		
+		int medianIdx = (int)(streamList.size() / 2);
+		BFPRT.bfprt(streamList, medianIdx);
 		abnormalStreamList.addAll(streamList);
 		return abnormalStreamList;
-	}
-	
-	
-	private String identifyAbnormalStreamsTest() {
-		String message = "";
-		List<Tuple> abnormalStreamList = new ArrayList<Tuple>();
-		
-		double minScore = Double.MAX_VALUE;
-		for(int i = 0; i < streamList.size(); ++i) {
-			Tuple tuple = streamList.get(i);
-			if(minScore > tuple.getDouble(1)) {
-				minScore = tuple.getDouble(1);
-			}
-		}
-		
-		int medianIdx = (int)Math.round(streamList.size() / 2);
-		Tuple medianTuple = BFPRT.bfprt(streamList, medianIdx);
-		
-		for(int i = medianIdx + 1; i < streamList.size(); ++i) {
-			Tuple streamTuple = streamList.get(i);
-			message += streamTuple.getString(0) + ":" + streamTuple.getDouble(1);
-			if(streamTuple.getDouble(1) == medianTuple.getDouble(1)) {
-				message += "(Median)\n";
-			}
-			else if(streamTuple.getDouble(1) - medianTuple.getDouble(1) > medianTuple.getDouble(1) - minScore) {
-				message += "(Outlier)\n";
-			}
-			else if(streamTuple.getDouble(1) == minScore) {
-				message += "(Min)\n";
-			}
-			else {
-				message += "\n";
-			}
-		}
-	
-		return message;
 	}
 	
 }

@@ -142,7 +142,7 @@ public class StreamAnomalyTopology {
 
 		builder.setBolt(ALERT_JMS_BOLT, jmsBolt).shuffleGrouping(ALERT_TRIGGER);
 		
-		double lambda = 0.01;	//	exponential decay parameter
+		double lambda = 0.015;	//	exponential decay parameter
 		Config conf = new Config();
 		conf.setDebug(true);
 		conf.put("lambda", lambda);

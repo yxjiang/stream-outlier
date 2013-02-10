@@ -35,7 +35,7 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		this.collector = collector;
 		this.lambda = Double.parseDouble(stormConf.get("lambda").toString());
 		this.factor = Math.pow(Math.E, -lambda);
-		this.threashold = 1 / (1 - factor) * 0.75;
+		this.threashold = 1 / (1 - factor) * 0.5;
 		this.shrinkNextRound = false;
 		this.streamProfiles = new HashMap<String, StreamProfile<T>>();
 		this.previousTimestamp = 0;
@@ -49,11 +49,10 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		if(timestamp > this.previousTimestamp) {
 			String alertMessage = "" + this.previousTimestamp + "\n";
 			for(Map.Entry<String, StreamProfile<T>> streamProfileEntry : this.streamProfiles.entrySet()) {
-				StreamProfile streamProfile = streamProfileEntry.getValue();
+				StreamProfile<T> streamProfile = streamProfileEntry.getValue();
 				if(this.shrinkNextRound == true) {
 					streamProfile.streamAnomalyScore = 0;
 				}
-//				this.streamProfiles.put(streamProfile.id, streamProfile);
 				this.collector.emit(new Values(streamProfileEntry.getKey(), 
 																				streamProfile.streamAnomalyScore, 
 																				this.previousTimestamp, 
@@ -67,23 +66,22 @@ public class DataStreamAnomalyScoreBolt<T> extends BaseRichBolt{
 		}
 		
 		String id = input.getString(0);
-		StreamProfile profile = this.streamProfiles.get(id);
+		StreamProfile<T> profile = this.streamProfiles.get(id);
+		double dataInstanceAnomalyScore = input.getDouble(1);
 		if(profile == null) {
-			profile = new StreamProfile<T>(id, (T)input.getValue(3), input.getDouble(1), input.getDouble(1));
+			profile = new StreamProfile<T>(id, (T)input.getValue(3), dataInstanceAnomalyScore, input.getDouble(1));
 			this.streamProfiles.put(id, profile);
 		}
 		else {
-			double dataInstanceAnomalyScore = input.getDouble(1);
 			//	update stream score
 			profile.streamAnomalyScore = profile.streamAnomalyScore * factor + dataInstanceAnomalyScore;
-			profile.currentDataInstance = input.getValue(3);
+			profile.currentDataInstance = (T)input.getValue(3);
 			profile.currentDataInstanceScore = dataInstanceAnomalyScore;
 			if(profile.streamAnomalyScore > this.threashold) {
 				this.shrinkNextRound = true;
 			}
 			this.streamProfiles.put(id, profile);
 		}
-		
 		this.collector.ack(input);
 	}
 
