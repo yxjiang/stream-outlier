@@ -26,7 +26,7 @@ import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import edu.fiu.yxjiang.stream.MetadataGather;
-import edu.fiu.yxjiang.stream.bolt.AlertTriggerBolt;
+import edu.fiu.yxjiang.stream.bolt.DataInstAlertTriggerBolt;
 import edu.fiu.yxjiang.stream.bolt.DataStreamAnomalyScoreBolt;
 import edu.fiu.yxjiang.stream.bolt.ObservationScoreBolt;
 import edu.fiu.yxjiang.stream.producer.GenericProducer;
@@ -34,14 +34,13 @@ import edu.fiu.yxjiang.stream.provider.GenericInputProvider;
 import edu.fiu.yxjiang.stream.provider.GenericOutputProvider;
 import edu.fiu.yxjiang.stream.util.Bean;
 
-public class StreamAnomalyTopology {
+public class DataInstStreamAnomalyTopology {
 	
 	public static final String DATA_TYPE = "computerMetaData";
 	
 	public static final String JMS_INPUT_JMS_TOPIC = "command";
 	public static final String JMS_SPOUT = "JMS SPOUT";
 	public static final String DATA_INSTANCE_SCORER = "DATA INSTANCE SCORER";
-	public static final String STREAM_SCORER = "STREAM SCORER";
 	public static final String ALERT_TRIGGER = "ALERT TRIGGER";
 	public static final String ALERT_JMS_BOLT = "ALERT JMS BOLT";
 	
@@ -111,11 +110,8 @@ public class StreamAnomalyTopology {
 		ObservationScoreBolt dataInstScoreBolt = new ObservationScoreBolt(DATA_TYPE);
 		builder.setBolt(DATA_INSTANCE_SCORER, dataInstScoreBolt, 1).shuffleGrouping(JMS_SPOUT);
 		
-		DataStreamAnomalyScoreBolt streamScoreBolt = new DataStreamAnomalyScoreBolt();
-		builder.setBolt(STREAM_SCORER, streamScoreBolt, 1).fieldsGrouping(DATA_INSTANCE_SCORER, new Fields("id"));
-		
-		AlertTriggerBolt alertTriggerBolt = new AlertTriggerBolt();
-		builder.setBolt(ALERT_TRIGGER, alertTriggerBolt, 1).shuffleGrouping(STREAM_SCORER);
+		DataInstAlertTriggerBolt alertTriggerBolt = new DataInstAlertTriggerBolt();
+		builder.setBolt(ALERT_TRIGGER, alertTriggerBolt, 1).shuffleGrouping(DATA_INSTANCE_SCORER);
 		
 		JmsProvider jmsOutputTopicProvider = new GenericOutputProvider(alertBrokerAddress, ALERT_TOPIC);
 		JmsBolt jmsBolt = new JmsBolt();
@@ -124,9 +120,18 @@ public class StreamAnomalyTopology {
 		jmsBolt.setJmsMessageProducer(new JmsMessageProducer() {
 			@Override
 			public Message toMessage(Session session, Tuple input) throws JMSException {
-//				String message = "time (" + new Date(input.getLong(2) * 1000) + ")\t" + input.getString(0) + ":" + input.getDouble(1);
+//				String message = "time (" + new Date(input.getLong(2)) + ")\t" + input.getString(0) + "\t" + input.getDouble(1) + "\t" + (input.getBoolean(3)? "abnormal" : "normal");
 //				String message = input.getString(0);
 //				TextMessage tm = session.createTextMessage(message);
+				
+//				for(int i = 0; i < 10; ++i) {
+//					System.out.println();
+//				}
+//				System.out.printf("\t\t\t\t\tNew Message: %s, %s\n", message, input.getValue(4).toString());
+				
+//				for(int i = 0; i < 10; ++i) {
+//					System.out.println();
+//				}
 				
 				Bean bean = new Bean();
 				bean.timestamp = input.getLong(2);
@@ -135,6 +140,12 @@ public class StreamAnomalyTopology {
 				bean.isAbnormal = input.getBoolean(3);
 				bean.observation = (MachineMetadata)input.getValue(4);
 				
+//				System.out.printf("%d\t%s\t%f\t%s\t%s\n", input.getLong(2), input.getString(0), input.getDouble(1), input.getBoolean(3)?"abnormal" : "normal", input.getValue(4).toString());
+//				
+//				for(int i = 0; i < 10; ++i) {
+//					System.out.println();
+//				}
+//				
 				ObjectMessage om = session.createObjectMessage(bean);
 				return om;
 			}
@@ -142,7 +153,7 @@ public class StreamAnomalyTopology {
 
 		builder.setBolt(ALERT_JMS_BOLT, jmsBolt).shuffleGrouping(ALERT_TRIGGER);
 		
-		double lambda = 0.017;	//	exponential decay parameter
+		double lambda = 0.02;	//	exponential decay parameter
 		Config conf = new Config();
 		conf.setDebug(true);
 		conf.put("lambda", lambda);
@@ -156,5 +167,4 @@ public class StreamAnomalyTopology {
 //		gather.close();
 //		System.exit(1);
 	}
-
 }
