@@ -124,10 +124,6 @@ public class StreamAnomalyTopology {
 		jmsBolt.setJmsMessageProducer(new JmsMessageProducer() {
 			@Override
 			public Message toMessage(Session session, Tuple input) throws JMSException {
-//				String message = "time (" + new Date(input.getLong(2) * 1000) + ")\t" + input.getString(0) + ":" + input.getDouble(1);
-//				String message = input.getString(0);
-//				TextMessage tm = session.createTextMessage(message);
-				
 				Bean bean = new Bean();
 				bean.timestamp = input.getLong(2);
 				bean.id = input.getString(0);
@@ -147,7 +143,7 @@ public class StreamAnomalyTopology {
 		conf.setDebug(true);
 		conf.put("lambda", lambda);
 		LocalCluster cluster = new LocalCluster();
-		cluster.submitTopology("storm-jms-example", conf, builder.createTopology());
+		cluster.submitTopology("storm-system-anomaly-detection", conf, builder.createTopology());
 //		while(true) {
 //			Utils.sleep(1000000);
 //		}

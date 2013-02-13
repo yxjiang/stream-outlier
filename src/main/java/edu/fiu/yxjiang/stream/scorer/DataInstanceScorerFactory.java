@@ -6,6 +6,9 @@ public class DataInstanceScorerFactory {
 		if(dataTypeName.equalsIgnoreCase("computerMetaData")) {
 			return new DistanceBasedDataInstanceScorer();
 		}
+		else if(dataTypeName.equals("twitterData")) {
+			return new TwitterDataInstanceScorer();
+		}
 		try {
 			throw new Exception("No matched data type scorer for " + dataTypeName);
 		} catch(Exception e) {
