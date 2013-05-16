@@ -24,8 +24,8 @@ import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import edu.fiu.yxjiang.stream.MetadataGather;
-import edu.fiu.yxjiang.stream.bolt.DataStreamAnomalyScoreBolt;
 import edu.fiu.yxjiang.stream.bolt.ObservationScoreBolt;
+import edu.fiu.yxjiang.stream.bolt.SlidingWindowStreamAnomalyScoreBolt;
 import edu.fiu.yxjiang.stream.bolt.TopKAlertTriggerBolt;
 import edu.fiu.yxjiang.stream.producer.GenericProducer;
 import edu.fiu.yxjiang.stream.provider.GenericInputProvider;
@@ -114,9 +114,10 @@ public class LOF2 {
 		ObservationScoreBolt dataInstScoreBolt = new ObservationScoreBolt(DATA_TYPE);
 		builder.setBolt(DATA_INSTANCE_SCORER, dataInstScoreBolt, 1).shuffleGrouping(JMS_SPOUT);
 		
-		DataStreamAnomalyScoreBolt streamScoreBolt = new DataStreamAnomalyScoreBolt();
+		SlidingWindowStreamAnomalyScoreBolt streamScoreBolt = new SlidingWindowStreamAnomalyScoreBolt();
 		builder.setBolt(STREAM_SCORER, streamScoreBolt, 1).fieldsGrouping(DATA_INSTANCE_SCORER, new Fields("id"));
 		
+		//	always report the top-K streams as abnormal
 		TopKAlertTriggerBolt alertTriggerBolt = new TopKAlertTriggerBolt();
 		builder.setBolt(ALERT_TRIGGER, alertTriggerBolt, 1).shuffleGrouping(STREAM_SCORER);
 		

@@ -73,6 +73,7 @@ public class TopKAlertTriggerBolt extends BaseRichBolt {
 				this.collector.emit(new Values(streamProfile.getString(0), streamProfile.getDouble(1), streamProfile.getLong(2), isAbnormal, streamProfile.getValue(3)));
 			}
 			
+			this.previousTimestamp = timestamp;
 			this.streamList.clear();	//	clear the cache
 		}
 		
